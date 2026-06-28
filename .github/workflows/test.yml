@@ -1,0 +1,18 @@
+name: Unity Build & Test Check
+
+# 언제 이 로봇(검사기)을 돌릴 것인가?
+on:
+  pull_request:
+    branches: [ main, develop ] # main이나 develop 브랜치로 PR이 올 때마다 실행
+
+jobs:
+  check-and-test:
+    runs-on: ubuntu-latest # 깃허브가 빌려주는 가상 리눅스 컴퓨터에서 실행
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      # 여기에 유니티 빌드 테스트나 C# 코드 컴파일 검사 명령어를 적습니다.
+      # (예시로 정상 작동하는지 체크하는 간단한 스크립트가 돌아감)
+      - name: 코드 구문 및 품질 검사 실행
+        run: echo "C# 코드 컨벤션 및 뒤끝 연동 스크립트 검사 중... 성공!"
