@@ -94,4 +94,9 @@ public class EntryPanelUI : MonoBehaviour
         errorText.text = string.Empty;
         errorText.gameObject.SetActive(false);
     }
+
+    public void HideSplash()
+    {
+        splashPanel.SetActive(false);
+    }
 }

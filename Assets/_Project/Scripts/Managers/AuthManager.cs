@@ -16,10 +16,6 @@ public class AuthManager : MonoBehaviour
     [Header("로그인 성공 후 전환할 씬 이름")]
     [SerializeField] private string mainSceneName = "MainMenu";
 
-    // 게스트 계정 식별을 위해 기기에 저장해두는 키 (자동 로그인용)
-    private const string GuestUuidKey = "BACKEND_GUEST_UUID";
-    private bool _isLoggingIn = false;
-
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -59,18 +55,7 @@ public class AuthManager : MonoBehaviour
     // ────────────────────────────────────────────────
     private void TryAutoLogin()
     {
-        Debug.Log($"[Auth] TryAutoLogin 호출, GuestKey 있음: {PlayerPrefs.HasKey(GuestUuidKey)}");
-        
-        if (!PlayerPrefs.HasKey(GuestUuidKey))
-        {
-            Debug.Log($"[Auth] EntryPanelUI.Instance: {EntryPanelUI.Instance}");
-            // 최초 실행 → EntryPanel에서 유저가 선택하도록 둔다
-            EntryPanelUI.Instance?.ShowEntryPanel();
-            return;
-        }
-
-        // 저장된 게스트 UUID로 자동 로그인 시도
-        BackendReturnObject bro = Backend.BMember.GuestLogin();
+        BackendReturnObject bro = Backend.BMember.LoginWithTheBackendToken();
 
         if (bro.IsSuccess())
         {
@@ -93,8 +78,6 @@ public class AuthManager : MonoBehaviour
 
         if (bro.IsSuccess())
         {
-            PlayerPrefs.SetInt(GuestUuidKey, 1);
-            PlayerPrefs.Save();
             Debug.Log("[Auth] 게스트 로그인 성공");
             OnLoginSuccess();
             onComplete?.Invoke(true, null);
@@ -182,11 +165,11 @@ public class AuthManager : MonoBehaviour
     /// </summary>
     public void GetPlayerName(Action<bool, string> onComplete)
     {
-        Backend.GameData.Get("PlayerProfile", new Where(), callback =>
-        {
-            Debug.Log($"[Auth] GetPlayerName 결과: {callback}");
-            Debug.Log($"[Auth] FlattenRows 수: {callback.FlattenRows()?.Count}");
+        Where where = new Where();
+        where.Equal("ownerInDate", Backend.UserInDate);
 
+        Backend.GameData.Get("PlayerProfile", where, callback =>
+        {
             if (!callback.IsSuccess())
             {
                 onComplete?.Invoke(false, null);
@@ -196,12 +179,11 @@ public class AuthManager : MonoBehaviour
             var rows = callback.FlattenRows();
             if (rows == null || rows.Count == 0)
             {
-                onComplete?.Invoke(true, null);
+                onComplete?.Invoke(true, null); // 정상 조회, 아직 이름 없음
                 return;
             }
 
             string playerName = rows[0]["playerName"].ToString();
-            Debug.Log($"[Auth] 조회된 playerName: {playerName}");
             onComplete?.Invoke(true, playerName);
         });
     }
@@ -237,21 +219,35 @@ public class AuthManager : MonoBehaviour
     /// 로그인/회원가입/게스트로그인 공통 성공 후처리.
     /// 플레이어 이름이 설정되어 있는지 확인해서 분기한다.
     /// </summary>
+    private bool _isLoggingIn = false;
+
     private void OnLoginSuccess()
     {
-        if (_isLoggingIn) return; // 중복 호출 방지
+        if (_isLoggingIn) return;
         _isLoggingIn = true;
 
-        GetPlayerName((success, playerName) =>
+        // SplashPanel 비활성화
+        EntryPanelUI.Instance?.HideSplash();
+
+        WalletManager.Instance.InitializeWallet(walletSuccess =>
         {
-            if (string.IsNullOrEmpty(playerName))
+            ShopManager.Instance.Initialize(shopSuccess =>
             {
-                PlayerNameSetupUI.Instance?.Show();
-            }
-            else
-            {
-                LoadMainScene();
-            }
+                CharmManager.Instance.Refresh();
+                AffectionManager.Instance.Initialize(affectionSuccess =>
+                {
+                    EquipmentManager.Instance.Initialize(equipmentSuccess =>
+                    {
+                        GetPlayerName((success, playerName) =>
+                        {
+                            if (string.IsNullOrEmpty(playerName))
+                                PlayerNameSetupUI.Instance?.Show();
+                            else
+                                LoadMainScene();
+                        });
+                    });
+                });
+            });
         });
     }
 
