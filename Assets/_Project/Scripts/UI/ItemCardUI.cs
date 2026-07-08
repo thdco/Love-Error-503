@@ -88,7 +88,7 @@ public class ItemCardUI : MonoBehaviour
     {
         if (_itemData == null) return;
 
-        bool isOwned = ShopManager.Instance.IsOwned(_itemData.itemId);
+        bool isOwned = IsOwnedCheck();
         bool isWearing = IsWearing();
 
         groupUnowned.SetActive(!isOwned);
@@ -97,6 +97,25 @@ public class ItemCardUI : MonoBehaviour
 
         if (!isOwned && txtPrice != null)
             txtPrice.text = _itemData.price.ToString("N0");
+    }
+
+    /// <summary>
+    /// Set은 멤버 아이템이 하나라도 보유됐을 때 보유중으로 간주.
+    /// 개별 아이템은 해당 itemId가 인벤토리에 있을 때 보유중.
+    /// </summary>
+    private bool IsOwnedCheck()
+    {
+        if (_itemData.category == ItemCategory.Set)
+        {
+            var members = ShopManager.Instance.GetSetMembers(_itemData.setGroupId);
+            foreach (var member in members)
+            {
+                if (ShopManager.Instance.IsOwned(member.itemId))
+                    return true;
+            }
+            return false;
+        }
+        return ShopManager.Instance.IsOwned(_itemData.itemId);
     }
 
     private bool IsWearing()
@@ -125,10 +144,15 @@ public class ItemCardUI : MonoBehaviour
     {
         if (_itemData == null) return;
 
-        bool isOwned = ShopManager.Instance.IsOwned(_itemData.itemId);
+        bool isOwned = IsOwnedCheck();
         bool isWearing = IsWearing();
 
-        if (isWearing) return; // 착용중이면 무반응
+        if (isWearing)
+        {
+            // 착용중 → 착용 해제 확인 팝업
+            LobbyManager.Instance.ShowUnequipConfirm(_itemData.itemName, OnConfirmUnequip);
+            return;
+        }
 
         if (isOwned)
         {
@@ -148,13 +172,12 @@ public class ItemCardUI : MonoBehaviour
 
     private void OnConfirmPurchase()
     {
-        // 코인 차감은 PurchaseConfirmPopup에서 처리
-        // 여기서는 인벤토리 추가만
         ShopManager.Instance.AddToInventory(_itemData.itemId, success =>
         {
-            if (!success)
+            if (success)
+                LobbyManager.Instance.ShowPurchaseComplete(); // 구매 완료 팝업
+            else
                 Debug.LogError($"[ItemCard] 구매 처리 실패: {_itemData.itemName}");
-            // 성공 시 OnInventoryChanged 이벤트로 자동 RefreshState 호출됨
         });
     }
 
@@ -164,7 +187,15 @@ public class ItemCardUI : MonoBehaviour
         {
             if (!success)
                 Debug.LogError($"[ItemCard] 착용 처리 실패: {_itemData.itemName}");
-            // 성공 시 OnEquipmentChanged 이벤트로 자동 RefreshState 호출됨
+        });
+    }
+
+    private void OnConfirmUnequip()
+    {
+        EquipmentManager.Instance.Unequip(_itemData, success =>
+        {
+            if (!success)
+                Debug.LogError($"[ItemCard] 착용 해제 실패: {_itemData.itemName}");
         });
     }
 }
