@@ -173,6 +173,45 @@ public class EquipmentManager : MonoBehaviour
         SaveEquipment(onComplete);
     }
 
+    /// <summary>아이템 착용 해제. 해당 슬롯을 빈 문자열로 초기화한다.</summary>
+    public void Unequip(ShopItemData item, Action<bool> onComplete)
+    {
+        string charId = item.IsMaleRelatedItem ? item.characterId : "player";
+
+        if (!_equipmentMap.ContainsKey(charId))
+        {
+            onComplete?.Invoke(false);
+            return;
+        }
+
+        if (item.category == ItemCategory.Set)
+        {
+            var members = ShopManager.Instance.GetSetMembers(item.setGroupId);
+            foreach (var member in members)
+            {
+                switch (member.category)
+                {
+                    case ItemCategory.Hair:   _equipmentMap[charId].hair   = string.Empty; break;
+                    case ItemCategory.Top:    _equipmentMap[charId].top    = string.Empty; break;
+                    case ItemCategory.Bottom: _equipmentMap[charId].bottom = string.Empty; break;
+                    case ItemCategory.Item:   _equipmentMap[charId].item   = string.Empty; break;
+                }
+            }
+        }
+        else
+        {
+            switch (item.category)
+            {
+                case ItemCategory.Hair:   _equipmentMap[charId].hair   = string.Empty; break;
+                case ItemCategory.Top:    _equipmentMap[charId].top    = string.Empty; break;
+                case ItemCategory.Bottom: _equipmentMap[charId].bottom = string.Empty; break;
+                case ItemCategory.Item:   _equipmentMap[charId].item   = string.Empty; break;
+            }
+        }
+
+        SaveEquipment(onComplete);
+    }
+
     private void SaveEquipment(Action<bool> onComplete)
     {
         Param param = BuildParam();
