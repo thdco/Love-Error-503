@@ -16,6 +16,9 @@ public class AuthManager : MonoBehaviour
     [Header("로그인 성공 후 전환할 씬 이름")]
     [SerializeField] private string mainSceneName = "MainMenu";
 
+    // 게스트 계정 식별을 위해 기기에 저장해두는 키 (자동 로그인용)
+    private const string GuestUuidKey = "BACKEND_GUEST_UUID";
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -55,7 +58,15 @@ public class AuthManager : MonoBehaviour
     // ────────────────────────────────────────────────
     private void TryAutoLogin()
     {
-        BackendReturnObject bro = Backend.BMember.LoginWithTheBackendToken();
+        if (!PlayerPrefs.HasKey(GuestUuidKey))
+        {
+            // 최초 실행 → EntryPanel에서 유저가 선택하도록 둔다
+            EntryPanelUI.Instance?.ShowEntryPanel();
+            return;
+        }
+
+        // 저장된 게스트 UUID로 자동 로그인 시도
+        BackendReturnObject bro = Backend.BMember.GuestLogin();
 
         if (bro.IsSuccess())
         {
@@ -74,8 +85,13 @@ public class AuthManager : MonoBehaviour
     // ────────────────────────────────────────────────
     public void GuestLogin(Action<bool, string> onComplete)
     {
-        BackendReturnObject bro = Backend.BMember.GuestLogin();
+        BackendReturnObject bro = Backend.BMember.LoginWithTheBackendToken();
 
+        if (!bro.IsSuccess())
+        {
+            bro = Backend.BMember.GuestLogin();
+        }
+        
         if (bro.IsSuccess())
         {
             Debug.Log("[Auth] 게스트 로그인 성공");
@@ -165,25 +181,26 @@ public class AuthManager : MonoBehaviour
     /// </summary>
     public void GetPlayerName(Action<bool, string> onComplete)
     {
-        Where where = new Where();
-        where.Equal("ownerInDate", Backend.UserInDate);
-
-        Backend.GameData.Get("PlayerProfile", where, callback =>
+        Backend.GameData.Get("PlayerProfile", new Where(), callback =>
         {
             if (!callback.IsSuccess())
             {
+                Debug.LogWarning($"[Auth] GetPlayerName 실패: {callback}");
                 onComplete?.Invoke(false, null);
                 return;
             }
 
             var rows = callback.FlattenRows();
+            Debug.Log($"[Auth] GetPlayerName rows: {rows?.Count}");
+
             if (rows == null || rows.Count == 0)
             {
-                onComplete?.Invoke(true, null); // 정상 조회, 아직 이름 없음
+                onComplete?.Invoke(true, null);
                 return;
             }
 
             string playerName = rows[0]["playerName"].ToString();
+            Debug.Log($"[Auth] playerName: {playerName}");
             onComplete?.Invoke(true, playerName);
         });
     }
@@ -226,14 +243,13 @@ public class AuthManager : MonoBehaviour
         if (_isLoggingIn) return;
         _isLoggingIn = true;
 
-        // SplashPanel 비활성화
-        EntryPanelUI.Instance?.HideSplash();
-
+        // 재화 → 상점 아이템/인벤토리 → 착용 정보 → 이름 확인 순서로 초기화
         WalletManager.Instance.InitializeWallet(walletSuccess =>
         {
             ShopManager.Instance.Initialize(shopSuccess =>
             {
                 CharmManager.Instance.Refresh();
+
                 AffectionManager.Instance.Initialize(affectionSuccess =>
                 {
                     EquipmentManager.Instance.Initialize(equipmentSuccess =>
@@ -241,9 +257,13 @@ public class AuthManager : MonoBehaviour
                         GetPlayerName((success, playerName) =>
                         {
                             if (string.IsNullOrEmpty(playerName))
+                            {
                                 PlayerNameSetupUI.Instance?.Show();
+                            }
                             else
+                            {
                                 LoadMainScene();
+                            }
                         });
                     });
                 });

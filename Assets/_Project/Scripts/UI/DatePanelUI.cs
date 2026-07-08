@@ -47,11 +47,6 @@ public class DatePanelUI : MonoBehaviour
     private MaleCharacter _currentCharacter = MaleCharacter.Hajin;
     private DateType _currentDateType = DateType.Normal;
 
-    // 남주별 로드 완료 여부 캐싱
-    private bool _hajinLoaded;
-    private bool _dohyunLoaded;
-    private bool _siwooLoaded;
-
     private void Awake()
     {
         btnHajin.onClick.AddListener(() => SwitchCharacter(MaleCharacter.Hajin));
@@ -64,11 +59,6 @@ public class DatePanelUI : MonoBehaviour
 
     private void OnEnable()
     {
-        // 패널 열릴 때마다 로드 플래그 초기화 (인벤토리 변경사항 반영)
-        _hajinLoaded = false;
-        _dohyunLoaded = false;
-        _siwooLoaded = false;
-
         SwitchCharacter(MaleCharacter.Hajin);
         SwitchDateType(DateType.Normal);
     }
@@ -90,15 +80,7 @@ public class DatePanelUI : MonoBehaviour
             _ => spriteHajin
         };
 
-        bool loaded = character switch
-        {
-            MaleCharacter.Hajin  => _hajinLoaded,
-            MaleCharacter.Dohyun => _dohyunLoaded,
-            MaleCharacter.Siwoo  => _siwooLoaded,
-            _ => false
-        };
-
-        if (!loaded) LoadCoupleSetCards();
+        LoadCoupleSetCards(); // 항상 새로 로드
     }
 
     private void RefreshCharacterTabColors()
@@ -152,14 +134,6 @@ public class DatePanelUI : MonoBehaviour
         {
             ItemCardUI card = Instantiate(coupleSetCardPrefab, content);
             card.Setup(item);
-        }
-
-        // 로드 완료 플래그 설정
-        switch (_currentCharacter)
-        {
-            case MaleCharacter.Hajin:  _hajinLoaded  = true; break;
-            case MaleCharacter.Dohyun: _dohyunLoaded = true; break;
-            case MaleCharacter.Siwoo:  _siwooLoaded  = true; break;
         }
     }
 }

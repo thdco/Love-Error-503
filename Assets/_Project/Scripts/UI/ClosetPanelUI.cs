@@ -56,11 +56,6 @@ public class ClosetPanelUI : MonoBehaviour
     private bool _myClosetLoaded;
     private bool _coupleLookLoaded;
 
-    // 그의 옷장은 남주별로 로드 여부 관리
-    private bool _hajinLoaded;
-    private bool _dohyunLoaded;
-    private bool _siwooLoaded;
-
     private void Awake()
     {
         btnMyCloset.onClick.AddListener(() => SwitchTab(ClosetTab.MyCloset));
@@ -82,9 +77,6 @@ public class ClosetPanelUI : MonoBehaviour
     {
         _myClosetLoaded = false;
         _coupleLookLoaded = false;
-        _hajinLoaded = false;
-        _dohyunLoaded = false;
-        _siwooLoaded = false;
     }
 
     // ────────────────────────────────────────────────
@@ -137,17 +129,7 @@ public class ClosetPanelUI : MonoBehaviour
     {
         _currentCharacter = character;
         RefreshHisCharacterTabColors();
-
-        // 남주 변경 시 Content_HisCloset 내용 갱신
-        bool loaded = character switch
-        {
-            HisCharacter.Hajin  => _hajinLoaded,
-            HisCharacter.Dohyun => _dohyunLoaded,
-            HisCharacter.Siwoo  => _siwooLoaded,
-            _ => false
-        };
-
-        if (!loaded) LoadHisCloset(character);
+        LoadHisCloset(character); // 탭 누를 때마다 기존 카드 지우고 새로 로드
     }
 
     private void RefreshHisCharacterTabColors()
@@ -163,6 +145,9 @@ public class ClosetPanelUI : MonoBehaviour
 
     private void LoadMyCloset()
     {
+        foreach (Transform child in contentMyCloset)
+            Destroy(child.gameObject);
+
         var categories = new[]
         {
             ItemCategory.Set,
@@ -187,6 +172,9 @@ public class ClosetPanelUI : MonoBehaviour
 
     private void LoadCoupleLook()
     {
+        foreach (Transform child in contentCoupleLook)
+            Destroy(child.gameObject);
+
         var items = ShopManager.Instance.GetItemsByTypeAndCategory(ItemType.Couple, ItemCategory.Set);
         foreach (var item in items)
         {
@@ -228,13 +216,6 @@ public class ClosetPanelUI : MonoBehaviour
                 ItemCardUI card = Instantiate(itemCardPrefab, contentHisCloset);
                 card.Setup(item);
             }
-        }
-
-        switch (character)
-        {
-            case HisCharacter.Hajin:  _hajinLoaded  = true; break;
-            case HisCharacter.Dohyun: _dohyunLoaded = true; break;
-            case HisCharacter.Siwoo:  _siwooLoaded  = true; break;
         }
     }
 

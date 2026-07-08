@@ -56,6 +56,9 @@ public class ShopManager : MonoBehaviour
     // 유저 보유 아이템 (itemId 집합)
     private HashSet<string> _ownedItemIds = new HashSet<string>();
 
+    // 인벤토리 변경 시 모든 ItemCardUI에 알려주는 이벤트
+    public event Action OnInventoryChanged;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -73,6 +76,7 @@ public class ShopManager : MonoBehaviour
 
     public void Initialize(Action<bool> onComplete)
     {
+        // 차트는 동기 함수라 바로 호출
         LoadAllItems(itemsSuccess =>
         {
             if (!itemsSuccess)
@@ -81,49 +85,48 @@ public class ShopManager : MonoBehaviour
                 return;
             }
 
-            LoadOwnedItems(inventorySuccess =>
-            {
-                onComplete?.Invoke(inventorySuccess);
-            });
+            LoadOwnedItems(onComplete);
         });
     }
 
+    [Header("차트 설정")]
+    [SerializeField] private string shopItemsChartId = "249056";
+
     private void LoadAllItems(Action<bool> onComplete)
     {
-        Backend.GameData.Get("ShopItems", new Where(), callback =>
+        BackendReturnObject bro = Backend.Chart.GetChartContents(shopItemsChartId);
+
+        if (!bro.IsSuccess())
         {
-            if (!callback.IsSuccess())
+            Debug.LogError($"[Shop] ShopItems 차트 조회 실패: {bro}");
+            onComplete?.Invoke(false);
+            return;
+        }
+
+        _allItems.Clear();
+        LitJson.JsonData rows = bro.FlattenRows();
+
+        foreach (LitJson.JsonData row in rows)
+        {
+            var item = new ShopItemData
             {
-                Debug.LogError($"[Shop] ShopItems 조회 실패: {callback}");
-                onComplete?.Invoke(false);
-                return;
-            }
+                itemId        = row["itemId"].ToString(),
+                itemName      = row["itemName"].ToString(),
+                category      = Enum.Parse<ItemCategory>(row["category"].ToString()),
+                itemType      = HasKey(row, "itemType") ? Enum.Parse<ItemType>(row["itemType"].ToString()) : ItemType.Player,
+                setGroupId    = HasKey(row, "setGroupId")    ? row["setGroupId"].ToString()    : string.Empty,
+                characterId   = HasKey(row, "characterId")   ? row["characterId"].ToString()   : string.Empty,
+                isDefault     = HasKey(row, "isDefault") && row["isDefault"].ToString().Equals("true", System.StringComparison.OrdinalIgnoreCase),
+                price         = int.Parse(row["price"].ToString()),
+                charmAmount   = int.Parse(row["charmAmount"].ToString()),
+                thumbnailPath = HasKey(row, "thumbnailPath") ? row["thumbnailPath"].ToString() : string.Empty,
+                spritePath    = HasKey(row, "spritePath")    ? row["spritePath"].ToString()    : string.Empty,
+            };
+            _allItems[item.itemId] = item;
+        }
 
-            _allItems.Clear();
-            var rows = callback.FlattenRows();
-
-            foreach (JsonData row in rows)
-            {
-                var item = new ShopItemData
-                {
-                    itemId        = row["inDate"].ToString(),
-                    itemName      = row["itemName"].ToString(),
-                    category      = Enum.Parse<ItemCategory>(row["category"].ToString()),
-                    itemType      = HasKey(row, "itemType") ? Enum.Parse<ItemType>(row["itemType"].ToString()) : ItemType.Player,
-                    setGroupId    = HasKey(row, "setGroupId")    ? row["setGroupId"].ToString()    : string.Empty,
-                    characterId   = HasKey(row, "characterId")   ? row["characterId"].ToString()   : string.Empty,
-                    isDefault     = HasKey(row, "isDefault")     && row["isDefault"].ToString() == "True",
-                    price         = int.Parse(row["price"].ToString()),
-                    charmAmount   = int.Parse(row["charmAmount"].ToString()),
-                    thumbnailPath = HasKey(row, "thumbnailPath") ? row["thumbnailPath"].ToString() : string.Empty,
-                    spritePath    = HasKey(row, "spritePath")    ? row["spritePath"].ToString()    : string.Empty,
-                };
-                _allItems[item.itemId] = item;
-            }
-
-            Debug.Log($"[Shop] 아이템 마스터 데이터 로드 완료: {_allItems.Count}개");
-            onComplete?.Invoke(true);
-        });
+        Debug.Log($"[Shop] 차트 로드 완료: {_allItems.Count}개");
+        onComplete?.Invoke(true);
     }
 
     private void LoadOwnedItems(Action<bool> onComplete)
@@ -281,7 +284,8 @@ public class ShopManager : MonoBehaviour
     {
         if (index >= itemIds.Count)
         {
-            CharmManager.Instance.Refresh(); // 인벤토리 변경 완료 후 매력도 재계산
+            CharmManager.Instance.Refresh();
+            OnInventoryChanged?.Invoke(); // 모든 카드 상태 갱신
             onComplete?.Invoke(true);
             return;
         }
