@@ -20,9 +20,11 @@ public class LobbyManager : MonoBehaviour
     [SerializeField] private GameObject btnBack;
 
     [Header("Popups")]
-    [SerializeField] private GameObject popups; // 어두운 배경을 포함하는 부모 컨테이너
+    [SerializeField] private GameObject popups;
     [SerializeField] private GameObject purchaseConfirmPopup;
+    [SerializeField] private GameObject purchaseCompletePopup;  // 구매 완료
     [SerializeField] private GameObject equipConfirmPopup;
+    [SerializeField] private GameObject unequipConfirmPopup;    // 착용 해제
     [SerializeField] private GameObject insufficientFundsPopup;
     [SerializeField] private GameObject attendancePopup;
     [SerializeField] private GameObject questPopup;
@@ -119,6 +121,18 @@ public class LobbyManager : MonoBehaviour
         popups.SetActive(false);
     }
 
+    public void ShowPurchaseComplete()
+    {
+        popups.SetActive(true);
+        purchaseCompletePopup.SetActive(true);
+    }
+
+    public void ClosePurchaseComplete()
+    {
+        purchaseCompletePopup.SetActive(false);
+        popups.SetActive(false);
+    }
+
     public void ShowEquipConfirm(string itemName, System.Action onConfirm)
     {
         popups.SetActive(true);
@@ -129,6 +143,19 @@ public class LobbyManager : MonoBehaviour
     public void CloseEquipConfirm()
     {
         equipConfirmPopup.SetActive(false);
+        popups.SetActive(false);
+    }
+
+    public void ShowUnequipConfirm(string itemName, System.Action onConfirm)
+    {
+        popups.SetActive(true);
+        unequipConfirmPopup.SetActive(true);
+        unequipConfirmPopup.GetComponent<UnequipConfirmPopup>().Show(itemName, onConfirm);
+    }
+
+    public void CloseUnequipConfirm()
+    {
+        unequipConfirmPopup.SetActive(false);
         popups.SetActive(false);
     }
 
@@ -172,7 +199,9 @@ public class LobbyManager : MonoBehaviour
     public void CloseAllPopups()
     {
         purchaseConfirmPopup.SetActive(false);
+        purchaseCompletePopup.SetActive(false);
         equipConfirmPopup.SetActive(false);
+        unequipConfirmPopup.SetActive(false);
         insufficientFundsPopup.SetActive(false);
         attendancePopup.SetActive(false);
         questPopup.SetActive(false);

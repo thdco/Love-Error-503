@@ -27,11 +27,22 @@ public class MainPanelUI : MonoBehaviour
         btnCloset.onClick.AddListener(OnClickCloset);
         btnAttendance.onClick.AddListener(OnClickAttendance);
         btnQuest.onClick.AddListener(OnClickQuest);
+
+        // 매력도 슬라이더는 0~100(%) 고정
+        sliderCharm.minValue = 0;
+        sliderCharm.maxValue = 100;
     }
 
-    private void Start()
+    private void OnEnable()
     {
+        CharmManager.Instance.OnCharmUpdated += RefreshCharm;
         RefreshCharm();
+    }
+
+    private void OnDisable()
+    {
+        if (CharmManager.Instance != null)
+            CharmManager.Instance.OnCharmUpdated -= RefreshCharm;
     }
 
     // ────────────────────────────────────────────────
@@ -70,13 +81,12 @@ public class MainPanelUI : MonoBehaviour
     // ────────────────────────────────────────────────
 
     /// <summary>
-    /// 옷장에서 아이템 착용/해제 시 호출해서 매력도 갱신
+    /// 아이템 구매/보유 변경 시 CharmManager.OnCharmUpdated 이벤트로 자동 호출된다.
     /// </summary>
-    public void RefreshCharm()
+    private void RefreshCharm()
     {
-        // TODO: CharmManager 연동 후 실제 값으로 교체
-        int charmValue = 0;
-        sliderCharm.value = charmValue;
-        txtCharm.text = $"매력도 {charmValue}";
+        float percent = CharmManager.Instance.CharmPercent;
+        sliderCharm.value = percent;
+        txtCharm.text = $"매력도 {percent:F0}%";
     }
 }

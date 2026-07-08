@@ -157,11 +157,7 @@ public class WalletManager : MonoBehaviour
         else
             param.AddCalculation(column, GameInfoOperator.subtraction, -delta);
 
-        // _walletRowInDate로 특정 행을 지정하기 위한 Where 조건
-        Where where = new Where();
-        where.Equal("inDate", _walletRowInDate);
-
-        Backend.GameData.UpdateWithCalculation("Wallet", where, param, callback =>
+        Backend.GameData.UpdateWithCalculation("Wallet", new Where(), param, callback =>
         {
             if (!callback.IsSuccess())
             {
