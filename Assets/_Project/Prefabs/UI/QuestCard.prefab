@@ -216,11 +216,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::QuestCardUI
   txtTitle: {fileID: 3507065198571129731}
   txtDetail: {fileID: 6597286339816476958}
-  slider: {fileID: 8414329961167592191}
+  sliderProgress: {fileID: 8414329961167592191}
   txtAchievementRate: {fileID: 9134941695253414672}
   rewardGrid: {fileID: 6064427456802710628}
   rewardCardPrefab: {fileID: 2869533237445743687, guid: 1a4b33acc6b1a9844b68694751123e66, type: 3}
   btnGet: {fileID: 3269289934765263124}
+  txtBtnGet: {fileID: 9211182769265069553}
 --- !u!1 &3825170689272553309
 GameObject:
   m_ObjectHideFlags: 0

@@ -34,6 +34,7 @@ public class ItemCardUI : MonoBehaviour
 
     private void OnEnable()
     {
+        Debug.Log($"[ItemCard] OnEnable 구독: {_itemData?.itemName}");
         if (ShopManager.Instance != null)
             ShopManager.Instance.OnInventoryChanged += RefreshState;
         if (EquipmentManager.Instance != null)
@@ -55,6 +56,18 @@ public class ItemCardUI : MonoBehaviour
     public void Setup(ShopItemData itemData)
     {
         _itemData = itemData;
+
+        // Setup 후 이벤트 재구독 (OnEnable 시점엔 _itemData가 없어서)
+        if (ShopManager.Instance != null)
+        {
+            ShopManager.Instance.OnInventoryChanged -= RefreshState;
+            ShopManager.Instance.OnInventoryChanged += RefreshState;
+        }
+        if (EquipmentManager.Instance != null)
+        {
+            EquipmentManager.Instance.OnEquipmentChanged -= RefreshState;
+            EquipmentManager.Instance.OnEquipmentChanged += RefreshState;
+        }
 
         txtItemName.text = itemData.itemName;
 
@@ -91,6 +104,9 @@ public class ItemCardUI : MonoBehaviour
         bool isOwned = IsOwnedCheck();
         bool isWearing = IsWearing();
 
+        Debug.Log($"[ItemCard] RefreshState - {_itemData.itemName} / isOwned: {isOwned} / isWearing: {isWearing}");
+        Debug.Log($"[ItemCard] IsOwned 직접: {ShopManager.Instance.IsOwned(_itemData.itemId)}");
+
         groupUnowned.SetActive(!isOwned);
         groupOwned.SetActive(isOwned && !isWearing);
         groupWearing.SetActive(isWearing);
@@ -107,14 +123,20 @@ public class ItemCardUI : MonoBehaviour
     {
         if (_itemData.category == ItemCategory.Set)
         {
+            // 멤버 아이템이 있으면 멤버 기준으로 체크 (여주 세트)
+            // 멤버가 없으면 Set 자체 itemId로 체크 (커플룩)
             var members = ShopManager.Instance.GetSetMembers(_itemData.setGroupId);
-            foreach (var member in members)
+            if (members.Count > 0)
             {
-                if (ShopManager.Instance.IsOwned(member.itemId))
-                    return true;
+                foreach (var member in members)
+                {
+                    if (ShopManager.Instance.IsOwned(member.itemId))
+                        return true;
+                }
+                return false;
             }
-            return false;
         }
+
         return ShopManager.Instance.IsOwned(_itemData.itemId);
     }
 
@@ -125,12 +147,19 @@ public class ItemCardUI : MonoBehaviour
         if (_itemData.category == ItemCategory.Set)
         {
             var members = ShopManager.Instance.GetSetMembers(_itemData.setGroupId);
+            if (members.Count == 0) return false;
+
             foreach (var member in members)
             {
-                if (!EquipmentManager.Instance.IsEquipped(charId, member.category, member.itemId))
+                // 멤버별로 characterId 따로 계산
+                string memberCharId = string.IsNullOrEmpty(member.characterId)
+                    ? "player"
+                    : member.characterId;
+
+                if (!EquipmentManager.Instance.IsEquipped(memberCharId, member.category, member.itemId))
                     return false;
             }
-            return members.Count > 0;
+            return true;
         }
 
         return EquipmentManager.Instance.IsEquipped(charId, _itemData.category, _itemData.itemId);

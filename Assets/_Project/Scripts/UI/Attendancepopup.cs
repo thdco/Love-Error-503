@@ -87,20 +87,10 @@ public class AttendancePopup : MonoBehaviour
         for (int i = 0; i < leftGridCards.Count; i++)
         {
             int day = i + 1;
-            leftGridCards[i].Setup(
-                day,
-                rewardCoins[i],
-                GetCardState(day),
-                OnClickTodayCard
-            );
+            leftGridCards[i].Setup(day, rewardCoins[i], GetCardState(day), OnClickTodayCard);
         }
 
-        day7Card.Setup(
-            7,
-            rewardCoins[6],
-            GetCardState(7),
-            OnClickTodayCard
-        );
+        day7Card.Setup(7, rewardCoins[6], GetCardState(7), OnClickTodayCard);
     }
 
     private DayCardState GetCardState(int day)
@@ -151,22 +141,21 @@ public class AttendancePopup : MonoBehaviour
                     if (insertCallback.IsSuccess())
                     {
                         _isTodayChecked = true;
+                        QuestManager.Instance.RecordProgress("attendance");
                         RefreshUI();
                     }
                 });
             }
             else
             {
-                // 기존 행 업데이트
                 string inDate = rows[0]["inDate"].ToString();
-                Where where = new Where();
-                where.Equal("inDate", inDate);
 
-                Backend.GameData.Update("Attendance", where, param, updateCallback =>
+                Backend.GameData.UpdateV2("Attendance", inDate, Backend.UserInDate, param, updateCallback =>
                 {
                     if (updateCallback.IsSuccess())
                     {
                         _isTodayChecked = true;
+                        QuestManager.Instance.RecordProgress("attendance");
                         RefreshUI();
                     }
                 });

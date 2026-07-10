@@ -2,19 +2,20 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 퀘스트 팝업. QuestManager에서 실데이터를 불러와 QuestCardUI를 동적 생성한다.
+/// QuestManager.OnQuestUpdated 이벤트로 자동 갱신된다.
+/// </summary>
 public class QuestPopup : MonoBehaviour
 {
     [Header("Popup")]
-    [SerializeField] private GameObject popups;
-
     [SerializeField] private Button btnClose;
 
     [Header("Quest")]
     [SerializeField] private Transform content;
-
     [SerializeField] private QuestCardUI questCardPrefab;
 
-    private readonly List<QuestCardUI> cards = new();
+    private readonly List<QuestCardUI> _cards = new();
 
     private void Awake()
     {
@@ -23,70 +24,47 @@ public class QuestPopup : MonoBehaviour
 
     private void OnEnable()
     {
+        QuestManager.Instance.OnQuestUpdated += Refresh;
         LoadQuest();
+    }
+
+    private void OnDisable()
+    {
+        if (QuestManager.Instance != null)
+            QuestManager.Instance.OnQuestUpdated -= Refresh;
     }
 
     public void LoadQuest()
     {
         Clear();
 
-        // TODO : Backend에서 Quest 가져오기
-
-        List<QuestData> questList = DummyQuest();
+        List<QuestData> questList = QuestManager.Instance.GetAllQuests();
 
         foreach (QuestData quest in questList)
         {
-            QuestCardUI card =
-                Instantiate(questCardPrefab, content);
-
-            card.Initialize(quest);
-
-            cards.Add(card);
+            QuestCardUI card = Instantiate(questCardPrefab, content);
+            QuestProgress progress = QuestManager.Instance.GetProgress(quest.questId);
+            card.Initialize(quest, progress);
+            _cards.Add(card);
         }
+    }
+
+    /// <summary>퀘스트 진행도 변경 시 전체 카드 갱신.</summary>
+    private void Refresh()
+    {
+        foreach (var card in _cards)
+            card.RefreshState();
     }
 
     private void Clear()
     {
-        foreach (QuestCardUI card in cards)
-        {
+        foreach (QuestCardUI card in _cards)
             Destroy(card.gameObject);
-        }
-
-        cards.Clear();
+        _cards.Clear();
     }
 
     private void Close()
     {
         LobbyManager.Instance.CloseQuest();
-    }
-
-    private List<QuestData> DummyQuest()
-    {
-        return new List<QuestData>()
-        {
-            new QuestData()
-            {
-                title = "튜토리얼 완료",
-                description = "게임 시작하기",
-                currentCount = 1,
-                goalCount = 1,
-                rewards = new List<RewardData>
-                {
-                    new RewardData { rewardType = "coin", rewardAmount = 100 }
-                }
-            },
-            new QuestData()
-            {
-                title = "데이트 3회",
-                description = "데이트를 3번 진행",
-                currentCount = 1,
-                goalCount = 3,
-                rewards = new List<RewardData>
-                {
-                    new RewardData { rewardType = "coin", rewardAmount = 200 },
-                    new RewardData { rewardType = "ticket", rewardAmount = 1 }
-                }
-            }
-        };
     }
 }

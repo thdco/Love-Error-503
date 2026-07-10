@@ -1,27 +1,39 @@
 using System;
-using System.Collections.Generic;
 
+/// <summary>
+/// 퀘스트 마스터 데이터 (차트에서 로드)
+/// </summary>
 [Serializable]
 public class QuestData
 {
+    public string questId;
     public string title;
     public string description;
-
-    public int currentCount;
+    public string questType;  // "ad"/"attendance"/"episode"/"purchase_couple"/"purchase_set"/"date_normal"/"date_special"
     public int goalCount;
-
-    public List<RewardData> rewards = new List<RewardData>();
-
-    public bool isRewardReceived;
-
-    public string inDate;      // Quests 테이블의 고유 id
-    public string progressInDate; // UserQuestProgress 테이블의 고유 id (본인 진행 상태 행)
+    public int rewardCoin;
+    public int rewardTicket;
 }
 
+/// <summary>
+/// 유저별 퀘스트 진행 상태 (UserQuestProgress 테이블에서 로드)
+/// </summary>
+[Serializable]
+public class QuestProgress
+{
+    public string questId;
+    public int currentCount;
+    public bool isRewardReceived;
+    public string inDate;
+}
+
+/// <summary>
+/// 보상 데이터 (RewardCardUI에서 사용)
+/// </summary>
 [Serializable]
 public class RewardData
 {
-    public string rewardType;   // "coin", "ticket" 등
+    public string rewardType;      // "coin", "ticket"
     public int rewardAmount;
-    public string rewardIconPath; // Resources.Load 경로
+    public string rewardIconPath;  // Resources.Load 경로
 }
