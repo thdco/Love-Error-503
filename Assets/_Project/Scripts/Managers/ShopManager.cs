@@ -239,8 +239,11 @@ public class ShopManager : MonoBehaviour
     public void AddToInventory(string itemId, Action<bool> onComplete)
     {
         var item = GetItem(itemId);
+        Debug.Log($"[Shop] AddToInventory 호출 - itemId: {itemId}, item: {item?.itemName}");
+
         if (item == null)
         {
+            Debug.LogError($"[Shop] 아이템을 찾을 수 없음: {itemId}");
             onComplete?.Invoke(false);
             return;
         }
@@ -277,6 +280,14 @@ public class ShopManager : MonoBehaviour
             {
                 onComplete?.Invoke(true);
             }
+
+            // 퀘스트 진행도 기록
+            if (item.category == ItemCategory.Set)
+            {
+                if (item.itemType == ItemType.Couple)
+                    QuestManager.Instance.RecordProgress("purchase_couple");
+                QuestManager.Instance.RecordProgress("purchase_set");
+            }
         });
     }
 
@@ -285,6 +296,7 @@ public class ShopManager : MonoBehaviour
         if (index >= itemIds.Count)
         {
             CharmManager.Instance.Refresh();
+            Debug.Log("[Shop] OnInventoryChanged 발행");
             OnInventoryChanged?.Invoke(); // 모든 카드 상태 갱신
             onComplete?.Invoke(true);
             return;

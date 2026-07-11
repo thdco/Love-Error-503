@@ -136,31 +136,43 @@ public class EquipmentManager : MonoBehaviour
     /// </summary>
     public void Equip(ShopItemData item, Action<bool> onComplete)
     {
+        Debug.Log($"[Equipment] Equip 호출 - {item.itemName} / category: {item.category} / charId: {(item.IsMaleRelatedItem ? item.characterId : "player")}");
+        
         string charId = item.IsMaleRelatedItem ? item.characterId : "player";
-
-        if (!_equipmentMap.ContainsKey(charId))
-        {
-            Debug.LogWarning($"[Equipment] 알 수 없는 characterId: {charId}");
-            onComplete?.Invoke(false);
-            return;
-        }
 
         if (item.category == ItemCategory.Set)
         {
             var members = ShopManager.Instance.GetSetMembers(item.setGroupId);
+            Debug.Log($"[Equipment] Set 멤버 수: {members.Count}");
             foreach (var member in members)
             {
+                // 멤버별로 characterId 유무로 여주/남주 구분
+                // 커플룩의 경우 characterId 없으면 여주, 있으면 해당 남주
+                Debug.Log($"[Equipment] 멤버: {member.itemId} / {member.category} / characterId: {member.characterId}");
+                string memberCharId = string.IsNullOrEmpty(member.characterId)
+                    ? "player"
+                    : member.characterId;
+
+                if (!_equipmentMap.ContainsKey(memberCharId)) continue;
+
                 switch (member.category)
                 {
-                    case ItemCategory.Hair:   _equipmentMap[charId].hair   = member.itemId; break;
-                    case ItemCategory.Top:    _equipmentMap[charId].top    = member.itemId; break;
-                    case ItemCategory.Bottom: _equipmentMap[charId].bottom = member.itemId; break;
-                    case ItemCategory.Item:   _equipmentMap[charId].item   = member.itemId; break;
+                    case ItemCategory.Hair:   _equipmentMap[memberCharId].hair   = member.itemId; break;
+                    case ItemCategory.Top:    _equipmentMap[memberCharId].top    = member.itemId; break;
+                    case ItemCategory.Bottom: _equipmentMap[memberCharId].bottom = member.itemId; break;
+                    case ItemCategory.Item:   _equipmentMap[memberCharId].item   = member.itemId; break;
                 }
             }
         }
         else
         {
+            if (!_equipmentMap.ContainsKey(charId))
+            {
+                Debug.LogWarning($"[Equipment] 알 수 없는 characterId: {charId}");
+                onComplete?.Invoke(false);
+                return;
+            }
+
             switch (item.category)
             {
                 case ItemCategory.Hair:   _equipmentMap[charId].hair   = item.itemId; break;
@@ -214,6 +226,8 @@ public class EquipmentManager : MonoBehaviour
 
     private void SaveEquipment(Action<bool> onComplete)
     {
+        Debug.Log("[Equipment] SaveEquipment 호출");
+        
         Param param = BuildParam();
 
         Backend.GameData.UpdateV2("UserEquipment", _rowInDate, Backend.UserInDate, param, callback =>

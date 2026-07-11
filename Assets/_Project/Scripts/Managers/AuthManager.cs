@@ -85,13 +85,15 @@ public class AuthManager : MonoBehaviour
     // ────────────────────────────────────────────────
     public void GuestLogin(Action<bool, string> onComplete)
     {
+        // 기기에 저장된 토큰이 있으면 토큰으로 먼저 로그인 시도
         BackendReturnObject bro = Backend.BMember.LoginWithTheBackendToken();
 
         if (!bro.IsSuccess())
         {
+            // 토큰 없거나 만료 → 새 게스트 계정 생성
             bro = Backend.BMember.GuestLogin();
         }
-        
+
         if (bro.IsSuccess())
         {
             Debug.Log("[Auth] 게스트 로그인 성공");
@@ -254,16 +256,22 @@ public class AuthManager : MonoBehaviour
                 {
                     EquipmentManager.Instance.Initialize(equipmentSuccess =>
                     {
-                        GetPlayerName((success, playerName) =>
+                        QuestManager.Instance.Initialize(questSuccess =>
                         {
-                            if (string.IsNullOrEmpty(playerName))
+                            AttendanceManager.Instance.Initialize(attendanceSuccess =>
                             {
-                                PlayerNameSetupUI.Instance?.Show();
-                            }
-                            else
-                            {
-                                LoadMainScene();
-                            }
+                                GetPlayerName((success, playerName) =>
+                                {
+                                    if (string.IsNullOrEmpty(playerName))
+                                    {
+                                        PlayerNameSetupUI.Instance?.Show();
+                                    }
+                                    else
+                                    {
+                                        LoadMainScene();
+                                    }
+                                });
+                            });
                         });
                     });
                 });
