@@ -258,16 +258,19 @@ public class AuthManager : MonoBehaviour
                     {
                         QuestManager.Instance.Initialize(questSuccess =>
                         {
-                            GetPlayerName((success, playerName) =>
+                            AttendanceManager.Instance.Initialize(attendanceSuccess =>
                             {
-                                if (string.IsNullOrEmpty(playerName))
+                                GetPlayerName((success, playerName) =>
                                 {
-                                    PlayerNameSetupUI.Instance?.Show();
-                                }
-                                else
-                                {
-                                    LoadMainScene();
-                                }
+                                    if (string.IsNullOrEmpty(playerName))
+                                    {
+                                        PlayerNameSetupUI.Instance?.Show();
+                                    }
+                                    else
+                                    {
+                                        LoadMainScene();
+                                    }
+                                });
                             });
                         });
                     });
