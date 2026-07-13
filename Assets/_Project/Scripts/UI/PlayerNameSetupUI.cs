@@ -5,11 +5,11 @@ using UnityEngine.UI;
 /// <summary>
 /// 로그인/회원가입/게스트 로그인 성공 직후, 아직 플레이어 이름이 없는 경우에만 노출되는 패널.
 /// 이름 저장이 끝나면 AuthManager.LoadMainScene()을 호출해 메인 씬으로 넘어간다.
+/// Instance 싱글톤 패턴을 쓰지 않는다 (비활성 오브젝트는 Awake가 씬 로드 시 호출되지 않기 때문).
+/// 대신 AuthManager 등 외부에서 이 컴포넌트를 직접 참조(Inspector 연결)해서 Show()를 호출한다.
 /// </summary>
 public class PlayerNameSetupUI : MonoBehaviour
 {
-    public static PlayerNameSetupUI Instance { get; private set; }
-
     [Header("Inputs")]
     [SerializeField] private TMP_InputField inputPlayerName;
 
@@ -24,12 +24,8 @@ public class PlayerNameSetupUI : MonoBehaviour
 
     private void Awake()
     {
-        Instance = this;
         btnConfirm.onClick.AddListener(OnClickConfirm);
-        gameObject.SetActive(false);
     }
-
-    private void Start() { }
 
     public void Show()
     {
