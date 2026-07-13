@@ -16,6 +16,9 @@ public class AuthManager : MonoBehaviour
     [Header("로그인 성공 후 전환할 씬 이름")]
     [SerializeField] private string mainSceneName = "MainMenu";
 
+    [Header("씬 로드 후 필요한 UI 직접 참조 (비활성 오브젝트라 Instance 패턴 대신 직접 연결)")]
+    [SerializeField] private PlayerNameSetupUI playerNameSetupUI;
+
     // 게스트 계정 식별을 위해 기기에 저장해두는 키 (자동 로그인용)
     private const string GuestUuidKey = "BACKEND_GUEST_UUID";
 
@@ -181,6 +184,9 @@ public class AuthManager : MonoBehaviour
     /// 현재 로그인된 유저의 플레이어 이름을 조회한다.
     /// 아직 설정한 적 없으면 onComplete(true, null)로 콜백된다.
     /// </summary>
+    /// <summary>현재 로그인된 유저의 플레이어 이름 캐시. GetPlayerName/SetPlayerName 호출 시 자동 갱신된다.</summary>
+    public string PlayerName { get; private set; }
+
     public void GetPlayerName(Action<bool, string> onComplete)
     {
         Backend.GameData.Get("PlayerProfile", new Where(), callback =>
@@ -203,6 +209,7 @@ public class AuthManager : MonoBehaviour
 
             string playerName = rows[0]["playerName"].ToString();
             Debug.Log($"[Auth] playerName: {playerName}");
+            PlayerName = playerName;
             onComplete?.Invoke(true, playerName);
         });
     }
@@ -220,6 +227,7 @@ public class AuthManager : MonoBehaviour
         {
             if (callback.IsSuccess())
             {
+                PlayerName = playerName;
                 onComplete?.Invoke(true, null);
             }
             else
@@ -260,16 +268,19 @@ public class AuthManager : MonoBehaviour
                         {
                             AttendanceManager.Instance.Initialize(attendanceSuccess =>
                             {
-                                GetPlayerName((success, playerName) =>
+                                EpisodeManager.Instance.Initialize(episodeSuccess =>
                                 {
-                                    if (string.IsNullOrEmpty(playerName))
+                                    GetPlayerName((success, playerName) =>
                                     {
-                                        PlayerNameSetupUI.Instance?.Show();
-                                    }
-                                    else
-                                    {
-                                        LoadMainScene();
-                                    }
+                                        if (string.IsNullOrEmpty(playerName))
+                                        {
+                                            playerNameSetupUI.Show();
+                                        }
+                                        else
+                                        {
+                                            LoadMainScene();
+                                        }
+                                    });
                                 });
                             });
                         });

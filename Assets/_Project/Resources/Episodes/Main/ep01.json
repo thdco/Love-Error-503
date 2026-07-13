@@ -1,0 +1,103 @@
+{
+  "episodeId": "ep01",
+  "nodes": [
+    {
+      "nodeId": "n001",
+      "type": "enter",
+      "characters": [
+        { "characterId": "player", "slot": "left" },
+        { "characterId": "dohyun", "slot": "right" }
+      ],
+      "next": "n002"
+    },
+    {
+      "nodeId": "n002",
+      "type": "dialogue",
+      "speaker": "dohyun",
+      "expression": "smile",
+      "background": "classroom",
+      "text": "그럼 난 나머지 작업하러 동방간다. 바이~",
+      "next": "n003"
+    },
+    {
+      "nodeId": "n003",
+      "type": "dialogue",
+      "speaker": "player",
+      "expression": "surprise",
+      "background": "classroom",
+      "text": "야 잠깐 기다려봐.",
+      "next": "n004"
+    },
+    {
+      "nodeId": "n004",
+      "type": "choice",
+      "text": "어디로 갈까?",
+      "choices": [
+        {
+          "text": "동방에 간다",
+          "dateEpisodeId": "dohyun_normal_01",
+          "dateType": "normal",
+          "characterId": "dohyun",
+          "returnNode": "n009"
+        },
+        {
+          "text": "집에 간다",
+          "next": "n006"
+        }
+      ]
+    },
+    {
+      "nodeId": "n006",
+      "type": "dialogue",
+      "speaker": "player",
+      "expression": "smile",
+      "background": "classroom",
+      "text": "가는 길에 쓰레기 좀 버려줘 ㅎㅎ",
+      "next": "n007"
+    },
+    {
+      "nodeId": "n007",
+      "type": "enter",
+      "characters": [{ "characterId": "dohyun", "slot": "center" }],
+      "next": "n008"
+    },
+    {
+      "nodeId": "n008",
+      "type": "dialogue",
+      "speaker": "dohyun",
+      "expression": "angry",
+      "background": "classroom",
+      "text": "아 뭔데 이거! 야!",
+      "next": "n009"
+    },
+    {
+      "nodeId": "n009",
+      "type": "charmBattle",
+      "opponentPercent": 20,
+      "winNext": "n011",
+      "loseNext": "n010"
+    },
+    {
+      "nodeId": "n011",
+      "type": "dialogue",
+      "speaker": "player",
+      "expression": "happy",
+      "background": "classroom",
+      "text": "내가 이김!",
+      "next": "n012"
+    },
+    {
+      "nodeId": "n010",
+      "type": "dialogue",
+      "speaker": "player",
+      "expression": "sad",
+      "background": "classroom",
+      "text": "ㅠㅠ졌다",
+      "next": "n009"
+    },
+    {
+      "nodeId": "n012",
+      "type": "end"
+    }
+  ]
+}

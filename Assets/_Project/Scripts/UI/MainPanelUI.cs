@@ -9,6 +9,7 @@ public class MainPanelUI : MonoBehaviour
 {
     [Header("하단 메뉴 버튼")]
     [SerializeField] private Button btnEpisode;
+    [SerializeField] private TMPro.TMP_Text txtEpisodeButton; // "에피소드" / "대결하러 가기" 전환
     [SerializeField] private Button btnDate;
     [SerializeField] private Button btnCloset;
 
@@ -37,6 +38,7 @@ public class MainPanelUI : MonoBehaviour
     {
         CharmManager.Instance.OnCharmUpdated += RefreshCharm;
         RefreshCharm();
+        RefreshEpisodeButtonLabel();
     }
 
     private void OnDisable()
@@ -49,11 +51,27 @@ public class MainPanelUI : MonoBehaviour
     // 버튼 이벤트
     // ────────────────────────────────────────────────
 
+    /// <summary>매력도 대결 대기 중이면 "대결하러 가기"로, 아니면 "에피소드"로 표시.</summary>
+    private void RefreshEpisodeButtonLabel()
+    {
+        if (txtEpisodeButton == null) return;
+        txtEpisodeButton.text = EpisodeManager.Instance.HasPendingCharmBattle ? "대결하러 가기" : "에피소드";
+    }
+
     private void OnClickEpisode()
     {
-        // TODO: 에피소드 씬으로 전환
-        // SceneManager.LoadScene("03_Episode");
-        Debug.Log("[Main] 에피소드 버튼 클릭");
+        if (EpisodeManager.Instance.HasPendingCharmBattle)
+        {
+            // 대결 대기 중이면 에피소드 씬으로 복귀
+            EpisodeManager.Instance.ResumeCharmBattle();
+            return;
+        }
+
+        EpisodeManager.Instance.EnterMainEpisodeAndLoadScene((success, error) =>
+        {
+            // 티켓 부족 등으로 진입 실패 시
+            LobbyManager.Instance.ShowInsufficientFunds(CurrencyType.Ticket);
+        });
     }
 
     private void OnClickDate()

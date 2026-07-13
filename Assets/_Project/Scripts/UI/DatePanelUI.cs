@@ -98,10 +98,38 @@ public class DatePanelUI : MonoBehaviour
     {
         SwitchDateType(dateType);
 
-        // TODO: 에피소드 시스템 연동 후 해금 여부 확인
-        // 해금됐으면 → 에피소드 씬으로 전환
-        // 미해금이면 → 티켓 차감 후 진입 or 잠금 안내 팝업
-        Debug.Log($"[Date] 데이트 타입 클릭: {dateType}, 남주: {_currentCharacter}");
+        string charId = _currentCharacter switch
+        {
+            MaleCharacter.Hajin  => "hajin",
+            MaleCharacter.Dohyun => "dohyun",
+            MaleCharacter.Siwoo  => "siwoo",
+            _ => "hajin"
+        };
+
+        string dateEpisodeId = $"{charId}_{(dateType == DateType.Normal ? "normal" : "special")}_01";
+
+        if (dateType == DateType.Normal)
+        {
+            // 데이트 패널에서는 이미 해금된 경우에만 진입 가능
+            if (!EpisodeManager.Instance.IsDateEpisodeUnlocked(dateEpisodeId))
+            {
+                Debug.Log("[Date] 아직 해금되지 않은 일반 데이트입니다. 메인 스토리에서 먼저 해금해주세요.");
+                return;
+            }
+
+            EpisodeManager.Instance.EnterNormalDateEpisodeAndLoadScene(dateEpisodeId, (success, error) =>
+            {
+                Debug.LogWarning($"[Date] 일반 데이트 진입 실패: {error}");
+            });
+        }
+        else
+        {
+            EpisodeManager.Instance.EnterSpecialDateEpisodeAndLoadScene(dateEpisodeId, charId, (success, error) =>
+            {
+                Debug.Log($"[Date] 스페셜 데이트 진입 실패: {error}");
+                // TODO: "커플룩을 보유해야 합니다" 안내 팝업으로 교체
+            });
+        }
     }
 
     private void SwitchDateType(DateType dateType)
