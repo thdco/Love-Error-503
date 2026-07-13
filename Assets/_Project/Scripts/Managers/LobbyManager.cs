@@ -42,6 +42,12 @@ public class LobbyManager : MonoBehaviour
     private void Start()
     {
         ShowMain();
+
+        // 매력도 대결 도중 나온 경우 → 아이템 구매 기회를 주기 위해 옷장까지 자동으로 열어준다
+        if (EpisodeManager.Instance != null && EpisodeManager.Instance.HasPendingCharmBattle)
+        {
+            ShowCloset();
+        }
     }
 
     // ────────────────────────────────────────────────
